@@ -21,8 +21,15 @@ def get_package_list_by_user(user):
 def print_package_list_to_file(user, destination):
     with open('%s/PACKAGES' % destination, 'w') as textfile:
         for package in get_package_list_by_user(user):
-            textfile.write(package)
-            textfile.write("\n")
+            deps = get_package_deps(package)
+            if not deps:
+                textfile.write(package + ": None" + "\n")
+            else:
+                for dep in deps:
+                    textfile.write(package + ": " + dep + "\n")
+                    # textfile.write(": ")
+                    # textfile.write(dep)
+                    # textfile.write("\n")
     print "Package list for PyPI user {} written to file.".format(user)
 
 
@@ -33,7 +40,7 @@ def get_package_deps(package):
     package_meta = json.load(response)
     version = package_meta["info"]["version"]
     if 'requires_dist' not in package_meta["info"]:
-        return "No dependencies listed for {0}@{1}".format(package, version)
+        return
     else:
         return package_meta["info"]["requires_dist"]
 

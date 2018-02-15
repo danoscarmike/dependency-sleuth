@@ -26,4 +26,6 @@ if __name__ == "__main__":
     with open(sys.argv[1]) as f:
         package_list = [x.strip() for x in f.readlines()]
     for package in package_list:
-        get_package_deps(package)
+        deps = get_package_deps(package)
+        if deps:
+            print deps

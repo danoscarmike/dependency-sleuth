@@ -44,7 +44,7 @@ if __name__ == "__main__":
     elif len(sys.argv) == 2:
         for package in get_package_list_by_user(sys.argv[1]):
             for dep in get_package_deps(package):
-                print package,": ", dep
+                print package, ": ", dep
             print "==========================================================="
 
     elif len(sys.argv) == 3:

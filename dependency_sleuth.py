@@ -75,7 +75,7 @@ def get_package_versions(package):
     ''' Takes a single PyPI package (e.g. google-cloud-speech) and returns a
         list of release versions for the passed package per the
         "releases" object of the PyPI package JSON information '''
-    version_URL = "http://pypi.python.org/pypi/{}/json".format(package)
+    version_URL = "http://pypi.python.org/pypi/{}/{}/json".format(package)
     response = urllib.request.urlopen(version_URL)
     package_json = json.load(response)
     versions = [package_json["info"]["version"]]

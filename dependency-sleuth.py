@@ -1,6 +1,7 @@
 from __future__ import absolute_import
 from __future__ import division
 
+import csv
 import json
 import sys
 import urllib2
@@ -19,18 +20,34 @@ def get_package_list_by_user(user):
 
 
 def print_package_list_to_file(user, destination):
-    with open('%s/PACKAGES' % destination, 'w') as textfile:
-        for package in get_package_list_by_user(user):
-            deps = get_package_deps(package)
-            if not deps:
-                textfile.write(package + ": None" + "\n")
+    dependencies = {}
+    with open('%s/packages.csv' % destination, 'w') as csvfile:
+        package_list = get_package_list_by_user(user)
+        fieldnames = ['dependency'] + package_list
+        datawriter = csv.DictWriter(csvfile, delimiter=',',
+                                    fieldnames=fieldnames, quotechar='"')
+        datawriter.writeheader()
+        for package in package_list:
+            required = get_package_deps(package)
+            if not required:
+                pass
             else:
-                for dep in deps:
-                    textfile.write(package + ": " + dep + "\n")
-                    # textfile.write(": ")
-                    # textfile.write(dep)
-                    # textfile.write("\n")
-    print "Package list for PyPI user {} written to file.".format(user)
+                for dist in required:
+                    dist_name = dist.split(" ",1)[0]
+                    if dist.find(" ") > -1:
+                        dist_range = dist.split(" ",1)[1].split(";",1)[0]
+                    else:
+                        dist_range = None
+                    if dist not in dependencies:
+                        dependencies[dist] = {}
+                        dependencies[dist][package] = dist_range
+                    row = {'dependency':dist.split(" ",1)[0]}
+                    if dist.find(" ") > -1:
+                        row.update({package:dist.split(" ",1)[1]})
+                print row
+                datawriter.writerow(row)
+    print "Dependencies of packages belonging to PyPI user, {},\
+           written to file.".format(user)
 
 
 def get_package_deps(package):

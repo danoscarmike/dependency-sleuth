@@ -14,11 +14,13 @@ def main(user, destination):
     for package in packages:
         if package not in gcp_python:
             gcp_python[package] = {}
-        versions = get_package_versions(package)
+        versions, latest = get_package_versions(package)
         for version in versions:
             if version not in gcp_python[package]:
-                gcp_python[package][version] = {}
+                gcp_python[package][version] = {'latest': None, 'deps': {}}
             dependencies = get_version_dependencies(package, version)
+            if version == latest:
+                gcp_python[package][version]['latest'] = True
             if not dependencies:
                 pass
             else:
@@ -30,7 +32,8 @@ def main(user, destination):
                         dep_name = dep
                         dep_range = None
                     if dep_name not in gcp_python[package][version]:
-                        gcp_python[package][version][dep_name] = dep_range
+                        gcp_python[package][version]['deps'][dep_name] =\
+                                                                    dep_range
     status = print_to_file(gcp_python, destination)
     if status:
         print("Dependencies for all versions of {}'s packages written to file."
@@ -56,10 +59,11 @@ def get_package_versions(package):
     package_URL = "http://pypi.python.org/pypi/{}/json".format(package)
     response = urllib.request.urlopen(package_URL)
     package_json = json.load(response)
+    latest = package_json["info"]['version']
     versions = []
     for release in package_json["releases"]:
         versions.append(release)
-    return versions
+    return versions, latest
 
 
 def get_version_dependencies(package, version):
@@ -81,7 +85,8 @@ def print_to_file(data, destination):
     ''' Takes a set of package dependency data and a local file destination and
         writes to file all the dependencies and their versions or version
         ranges for each PyPI package owned by the passed user. '''
-    fieldnames = ['package_name', 'package_version', 'dep_name', 'dep_version']
+    fieldnames = ['package_name', 'package_version', 'latest', 'dep_name',
+                  'dep_version']
     with open('%s/gcp_python.csv' % destination, 'w') as csvfile:
         print("Printing to file: {}/gcp_python.csv".format(destination))
         datawriter = csv.DictWriter(csvfile, delimiter=',',
@@ -90,10 +95,11 @@ def print_to_file(data, destination):
         for package in data:
             row = {'package_name': package}
             for package_version in data[package]:
-                row.update({'package_version': package_version})
-                for dep in data[package][package_version]:
+                row.update({'package_version': package_version, 'latest':
+                            data[package][package_version]['latest']})
+                for dep in data[package][package_version]['deps']:
                     row.update({'dep_name': dep, 'dep_version':
-                                data[package][package_version][dep]})
+                                data[package][package_version]['deps'][dep]})
                     datawriter.writerow(row)
     return True
 

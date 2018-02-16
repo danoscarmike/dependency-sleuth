@@ -9,6 +9,8 @@ from bs4 import BeautifulSoup
 
 
 def get_package_list_by_user(user):
+    ''' Takes a single PyPI user (e.g. a package maintainer) and returns a list
+        of all PyPI packages owned by that user. '''
     pypi_user_URL = "http://pypi.org/user/{}/".format(user)
     print("Calling {}".format(pypi_user_URL))
     soup = BeautifulSoup(urllib.request.urlopen(pypi_user_URL), 'html.parser')
@@ -34,8 +36,10 @@ def get_package_list_by_user(user):
 
 
 def print_package_list_to_file(user, destination):
+    ''' Takes a single PyPI user (e.g. a package maintainer) and a local file
+        destination and writes to file all the dependencies and their versions
+        or version ranges for each PyPI package owned by the passed user. '''
     package_list, dependencies = get_package_list_by_user(user)
-    print(dependencies)
     with open('%s/packages.csv' % destination, 'w') as csvfile:
         fieldnames = ['dependency'] + package_list
         datawriter = csv.DictWriter(csvfile, delimiter=',',
@@ -52,14 +56,18 @@ def print_package_list_to_file(user, destination):
 
 
 def get_package_dependencies(package):
+    ''' Takes a single PyPI package (e.g. google-cloud-speech) and returns the
+        list of required distributions for the passed package per the
+        "requires_dist" property in the "info" object of the PyPI package JSON
+        information '''
     package_URL = "http://pypi.python.org/pypi/{}/json".format(package)
     print("Calling {}".format(package_URL))
     response = urllib.request.urlopen(package_URL)
-    package_meta = json.load(response)
-    if 'requires_dist' not in package_meta["info"]:
+    package_json = json.load(response)
+    if 'requires_dist' not in package_json["info"]:
         return
     else:
-        return package_meta["info"]["requires_dist"]
+        return package_json["info"]["requires_dist"]
 
 
 if __name__ == "__main__":
